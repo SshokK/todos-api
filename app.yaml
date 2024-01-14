@@ -1,1 +1,4 @@
-runtime: nodejs18
+runtime: nodejs18.15.0
+
+env_variables:
+  MONGO_CONNECTION_URL: "projects/324631814927/secrets/MONGO_CONNECTION_URL/versions/latest"
