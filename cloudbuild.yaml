@@ -6,10 +6,5 @@ steps:
     entrypoint: 'npm'
     args: [ 'run', 'build' ]
 
-availableSecrets:
-  secretManager:
-  - versionName: projects/324631814927/secrets/MONGO_CONNECTION_URL/versions/latest
-    env: 'MONGO_CONNECTION_URL'
-
 options:
   logging: CLOUD_LOGGING_ONLY
