@@ -17,5 +17,7 @@ import * as nestFastify from '@nestjs/platform-fastify';
     defaultVersion: requestConstants.ROUTE_DEFAULT_VERSION,
   });
 
+  nestApp.enableCors();
+
   await nestApp.listen(globalConstants.ENV.PORT, globalConstants.ENV.HOST);
 })();

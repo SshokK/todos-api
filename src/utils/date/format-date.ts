@@ -5,7 +5,7 @@ import momentTimezone from 'moment-timezone';
 export const formatDate = <F>(
   date,
   {
-    format = dateConstants.DATE_FORMAT.DATE_TIME,
+    format = dateConstants.DATE_FORMAT.ISO_DATE_TIME,
     timezone = dateConstants.TIMEZONE.UTC,
     passedTimezone,
     shouldKeepLocalTime = true,
@@ -18,7 +18,7 @@ export const formatDate = <F>(
     shouldKeepLocalTime?: boolean;
     emptyFallback?: F;
   } = {
-    format: dateConstants.DATE_FORMAT.DATE_TIME,
+    format: dateConstants.DATE_FORMAT.ISO_DATE_TIME,
     timezone: dateConstants.TIMEZONE.UTC,
     emptyFallback: null,
   },

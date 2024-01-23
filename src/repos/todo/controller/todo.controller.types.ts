@@ -18,14 +18,9 @@ export interface TodosController {
       sortOrder?: sortConstants.SORT_ORDER;
     },
     never,
-    {
-      results: Awaited<
-        ReturnType<InstanceType<typeof service.TodoService>['findAll']>
-      >;
-      totalCount: Awaited<
-        ReturnType<InstanceType<typeof service.TodoService>['getTotalCount']>
-      >;
-    }
+    Awaited<
+      ReturnType<InstanceType<typeof service.TodoService>['findAll']>
+    >
   >;
 
   [constants.ROUTE.CREATE_TODO]: controllerTypes.ControllerRouteData<
@@ -61,5 +56,28 @@ export interface TodosController {
     {
       id: schema.Todo['_id'];
     }
+  >;
+
+  [constants.ROUTE.BULK_DELETE_TODOS]: controllerTypes.ControllerRouteData<
+    never,
+    {
+      filters: {
+        ids: schema.Todo['_id'][];
+        isDone: schema.Todo['isDone'] | null;
+        date: {
+          rangeStart: schema.Todo['date'] | null;
+          rangeEnd: schema.Todo['date'] | null;
+        };
+      };
+    },
+    Awaited<ReturnType<service.TodoService['create']>>
+  >;
+
+  [constants.ROUTE.AGGREGATE_COUNT]: controllerTypes.ControllerRouteData<
+    {
+      currentDate: string;
+    },
+    never,
+    Awaited<ReturnType<service.TodoService['aggregateCount']>>
   >;
 }

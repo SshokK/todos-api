@@ -7,6 +7,8 @@ export enum ROUTE {
   CREATE_TODO = 'createTodo',
   UPDATE_TODO = 'updateTodo',
   DELETE_TODO = 'deleteTodo',
+  BULK_DELETE_TODOS = 'bulkDeleteTodos',
+  AGGREGATE_COUNT = 'aggregateCount',
 }
 
 export const ALLOWED_SORT_FIELDS: Record<

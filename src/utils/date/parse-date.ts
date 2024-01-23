@@ -5,10 +5,10 @@ import moment from 'moment';
 export const parseDate = (
   date,
   {
-    expectedFormats = [dateConstants.DATE_FORMAT.DATE_TIME],
+    expectedFormats = [dateConstants.DATE_FORMAT.ISO_DATE_TIME],
     isStrict = true,
   } = {
-    expectedFormats: [dateConstants.DATE_FORMAT.DATE_TIME],
+    expectedFormats: [dateConstants.DATE_FORMAT.ISO_DATE_TIME],
     isStrict: true,
   },
 ): Date => {
