@@ -14,7 +14,7 @@ export enum TODO_COUNT_AGGREGATION_KEY {
 
 export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
   TODO_COUNT_AGGREGATION_KEY,
-  (args: { currentDate: string }) => mongoose.PipelineStage.FacetPipelineStage[]
+  (args: { currentDate: Date }) => mongoose.PipelineStage.FacetPipelineStage[]
 > = {
   [TODO_COUNT_AGGREGATION_KEY.DONE]: () => [
     { $match: { isDone: true } },

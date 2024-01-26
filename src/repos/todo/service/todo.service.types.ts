@@ -7,7 +7,7 @@ export interface TodoService {
 
   findOne(id: schema.Todo['_id']): Promise<schema.Todo>;
 
-  aggregateCount(args: { currentDate: string }): Promise<{
+  aggregateCount(args: { currentDate: Date }): Promise<{
     doneCount: number;
     overdueCount: number;
     undoneCount: number;
@@ -39,13 +39,11 @@ export interface TodoService {
   deleteOne(id: schema.Todo['_id']): Promise<void>;
 
   deleteMany(args: {
-    filters: {
-      ids?: schema.Todo['_id'][];
-      isDone?: schema.Todo['isDone'] | null;
-      date?: {
-        rangeStart: schema.Todo['date'] | null;
-        rangeEnd: schema.Todo['date'] | null;
-      };
+    ids?: schema.Todo['_id'][];
+    isDone?: schema.Todo['isDone'];
+    date?: {
+      rangeStart?: schema.Todo['date'];
+      rangeEnd?: schema.Todo['date'];
     };
   }): Promise<{
     deletedCount: number;

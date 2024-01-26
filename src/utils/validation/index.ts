@@ -1,3 +1,1 @@
-export * from './mongoose-class-serializer-interceptor'
-export * from './schema';
-export * from './validation-pipe';
+export * from './mongoose-class-serializer-interceptor';

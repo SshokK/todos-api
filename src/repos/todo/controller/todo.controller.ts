@@ -2,12 +2,14 @@ import type * as types from './todo.controller.types';
 
 import * as service from '../service';
 import * as nestCommon from '@nestjs/common';
+import * as nestSwagger from '@nestjs/swagger';
 import * as constants from './todo.controller.constants';
-import * as serializers from './todo.controller.serializers';
 import * as requestConstants from '../../../constants/request.constants';
 import * as utils from '../../../utils';
 import * as schema from '../schema';
+import * as dto from './todo.controller.dto';
 
+@nestSwagger.ApiTags(constants.TAG)
 @nestCommon.Controller({
   path: constants.ROUTE_BASE,
   version: requestConstants.ROUTE_VERSION.V1,
@@ -27,19 +29,19 @@ export class TodoController {
    *
    */
   @nestCommon.Get()
+  @nestSwagger.ApiOkResponse({
+    description: 'List of todos',
+    type: [schema.Todo],
+  })
+  @nestSwagger.ApiBadRequestResponse({
+    description: 'Wrong query params were passed',
+    type: utils.BadRequestResponseDto,
+  })
   public async [constants.ROUTE.GET_TODOS](
-    @nestCommon.Query(
-      new utils.ValidationPipe(
-        serializers.SERIALIZERS[constants.ROUTE.GET_TODOS].QUERY_PARAMS,
-        nestCommon.BadRequestException,
-      ),
-    )
-    queryParams: types.TodosController[constants.ROUTE.GET_TODOS]['queryParams'],
+    @nestCommon.Query()
+    queryParams: dto.GetTodosQueryParamsDto,
   ) {
-    return this.todoService.findAll({
-      limit: queryParams.limit,
-      offset: queryParams.offset,
-    });
+    return this.todoService.findAll(queryParams);
   }
 
   /**
@@ -48,14 +50,21 @@ export class TodoController {
    *
    */
   @nestCommon.Post()
+  @nestSwagger.ApiOkResponse({
+    description: 'Created todo item',
+    type: schema.Todo,
+  })
+  @nestSwagger.ApiBadRequestResponse({
+    description: 'Wrong body was passed',
+    type: utils.BadRequestResponseDto,
+  })
+  @nestSwagger.ApiConflictResponse({
+    description: 'Passed id is not unique',
+    type: utils.ConflictResponseDto,
+  })
   public async [constants.ROUTE.CREATE_TODO](
-    @nestCommon.Body(
-      new utils.ValidationPipe(
-        serializers.SERIALIZERS[constants.ROUTE.CREATE_TODO].BODY,
-        nestCommon.BadRequestException,
-      ),
-    )
-    body: types.TodosController[constants.ROUTE.CREATE_TODO]['body'],
+    @nestCommon.Body()
+    body: dto.CreateTodoBodyDto,
   ) {
     return this.todoService.create(body);
   }
@@ -66,22 +75,24 @@ export class TodoController {
    *
    */
   @nestCommon.Patch(':id')
+  @nestSwagger.ApiOkResponse({
+    description: 'Updated todo item',
+    type: schema.Todo,
+  })
+  @nestSwagger.ApiNotFoundResponse({
+    description: 'Todo was not found',
+    type: utils.NotFoundResponseDto,
+  })
+  @nestSwagger.ApiBadRequestResponse({
+    description: 'Wrong body or url params were passed',
+    type: utils.BadRequestResponseDto,
+  })
   public async [constants.ROUTE.UPDATE_TODO](
-    @nestCommon.Param(
-      new utils.ValidationPipe(
-        serializers.SERIALIZERS[constants.ROUTE.UPDATE_TODO].URL_PARAMS,
-        nestCommon.BadRequestException,
-      ),
-    )
-    urlParams: types.TodosController[constants.ROUTE.UPDATE_TODO]['urlParams'],
+    @nestCommon.Param()
+    urlParams: dto.UpdateTodoUrlParamsDto,
 
-    @nestCommon.Body(
-      new utils.ValidationPipe(
-        serializers.SERIALIZERS[constants.ROUTE.UPDATE_TODO].BODY,
-        nestCommon.BadRequestException,
-      ),
-    )
-    body: types.TodosController[constants.ROUTE.UPDATE_TODO]['body'],
+    @nestCommon.Body()
+    body: dto.UpdateTodoBodyDto,
   ) {
     return this.todoService.updateOne(urlParams.id, body);
   }
@@ -92,14 +103,20 @@ export class TodoController {
    *
    */
   @nestCommon.Delete(':id')
+  @nestSwagger.ApiOkResponse({
+    description: 'Todo was successfully deleted',
+  })
+  @nestSwagger.ApiNotFoundResponse({
+    description: 'Todo was not found',
+    type: utils.NotFoundResponseDto,
+  })
+  @nestSwagger.ApiBadRequestResponse({
+    description: 'Wrong url params were passed',
+    type: utils.BadRequestResponseDto,
+  })
   public async [constants.ROUTE.DELETE_TODO](
-    @nestCommon.Param(
-      new utils.ValidationPipe(
-        serializers.SERIALIZERS[constants.ROUTE.DELETE_TODO].URL_PARAMS,
-        nestCommon.BadRequestException,
-      ),
-    )
-    urlParams: types.TodosController[constants.ROUTE.DELETE_TODO]['urlParams'],
+    @nestCommon.Param()
+    urlParams: dto.DeleteTodoUrlParamsDto,
   ) {
     return this.todoService.deleteOne(urlParams.id);
   }
@@ -110,16 +127,25 @@ export class TodoController {
    *
    */
   @nestCommon.Delete()
+  @nestSwagger.ApiOkResponse({
+    description: 'Deleted todos count',
+    type: dto.BulkDeleteResponseDto,
+  })
+  @nestSwagger.ApiBadRequestResponse({
+    description: 'Wrong body or query params were passed',
+    type: utils.BadRequestResponseDto,
+  })
   public async [constants.ROUTE.BULK_DELETE_TODOS](
-    @nestCommon.Body(
-      new utils.ValidationPipe(
-        serializers.SERIALIZERS[constants.ROUTE.BULK_DELETE_TODOS].BODY,
-        nestCommon.BadRequestException,
-      ),
-    )
-    body: types.TodosController[constants.ROUTE.BULK_DELETE_TODOS]['body'],
+    @nestCommon.Query()
+    queryParams: dto.BulkDeleteQueryParamsDto,
+
+    @nestCommon.Body()
+    body: dto.BulkDeleteBodyDto,
   ) {
-    return this.todoService.deleteMany(body);
+    return this.todoService.deleteMany({
+      ...queryParams,
+      ...body,
+    });
   }
 
   /**
@@ -128,14 +154,17 @@ export class TodoController {
    *
    */
   @nestCommon.Get('/count')
+  @nestSwagger.ApiOkResponse({
+    description: 'Todos counts',
+    type: dto.CountAggregationResponseDto,
+  })
+  @nestSwagger.ApiBadRequestResponse({
+    description: 'Wrong query params were passed',
+    type: utils.BadRequestResponseDto,
+  })
   public async [constants.ROUTE.AGGREGATE_COUNT](
-    @nestCommon.Query(
-      new utils.ValidationPipe(
-        serializers.SERIALIZERS[constants.ROUTE.AGGREGATE_COUNT].QUERY_PARAMS,
-        nestCommon.BadRequestException,
-      ),
-    )
-    queryParams: types.TodosController[constants.ROUTE.AGGREGATE_COUNT]['queryParams'],
+    @nestCommon.Query()
+    queryParams: dto.CountAggregationQueryParamsDto,
   ) {
     return this.todoService.aggregateCount(queryParams);
   }

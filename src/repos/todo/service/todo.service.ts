@@ -214,21 +214,19 @@ export class TodoService implements types.TodoService {
   deleteMany: types.TodoService['deleteMany'] = async (args) => {
     const { deletedCount } = await this.todoModel
       .deleteMany({
-        ...(Boolean(args.filters.ids.length) && {
-          _id: { $in: args.filters.ids },
+        ...(Boolean(args.ids?.length) && {
+          _id: { $in: args.ids },
         }),
 
-        ...(utils.isBoolean(args.filters.isDone) && {
-          isDone: args.filters.isDone,
+        ...(utils.isBoolean(args.isDone) && {
+          isDone: args.isDone,
         }),
 
-        ...(Boolean(
-          args.filters.date?.rangeStart || args.filters.date?.rangeEnd,
-        ) && {
+        ...(Boolean(args.date?.rangeStart || args.date?.rangeEnd) && {
           date: {
-            ...(Boolean(args.filters.date.rangeStart) && {
+            ...(Boolean(args.date.rangeStart) && {
               $gte: utils.getStartOfDate(
-                args.filters.date.rangeStart,
+                args.date.rangeStart,
                 dateConstants.DATE_UNIT.DAY,
                 {
                   emptyFallback: null,
@@ -236,9 +234,9 @@ export class TodoService implements types.TodoService {
               ),
             }),
 
-            ...(Boolean(args.filters.date.rangeEnd) && {
+            ...(Boolean(args.date.rangeEnd) && {
               $lt: utils.getEndOfDate(
-                args.filters.date.rangeEnd,
+                args.date.rangeEnd,
                 dateConstants.DATE_UNIT.DAY,
                 {
                   emptyFallback: null,
