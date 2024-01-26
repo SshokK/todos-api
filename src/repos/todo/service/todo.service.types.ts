@@ -14,6 +14,10 @@ export interface TodoService {
     totalCount: number;
   }>;
 
+  getSameDayTodoHighestOrder(
+    date: schema.Todo['date'],
+  ): Promise<schema.Todo['order']>;
+
   create(args: {
     id?: schema.Todo['_id'];
     order?: schema.Todo['order'];

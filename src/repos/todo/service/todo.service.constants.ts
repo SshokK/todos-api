@@ -1,4 +1,5 @@
 import type * as mongoose from 'mongoose';
+import type * as mongodb from 'mongodb';
 
 import * as dateConstants from '../../../constants/date.constants';
 import * as utils from '../../../utils';
@@ -56,124 +57,105 @@ export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
   ],
 };
 
-export enum TODO_MOVE_TYPE {
-  SAME_DAY = 'sameDay',
-  ANOTHER_DAY = 'anotherDay',
+export enum TODO_BULK_UPDATE_OPERATION_KEY {
+  DECREASE_PREV_DAY_HIGHER_TODOS_ORDER = 'decreasePrevDayHigherTodosOrder',
+  INCREASE_UPDATED_DAY_HIGHER_TODOS_ORDER = 'increaseUpdatedDayHigherTodosOrder',
+  UPDATE_PREV_DAY_NEARBY_TODOS_ORDER = 'updatePrevDayNearbyTodosOrder',
 }
 
-export const TODO_MOVE_OPERATIONS = {
-  [TODO_MOVE_TYPE.ANOTHER_DAY]: (args: {
-    todo: schema.Todo;
-    options: {
-      newTodoOrder: schema.Todo['order'];
-      newTodoDate: schema.Todo['date'];
-    };
-  }) => [
-    /**
-     *
-     * Item was moved to another day
-     * Lower the previous day todos order by 1, if their order was
-     * higher than the updated item's order
-     *
-     */
-    {
-      updateMany: {
-        filter: {
-          $and: [
-            {
-              _id: { $ne: args.todo._id },
-            },
-            {
-              date: utils.sameDayFilter(args.todo.date),
-            },
-            {
-              order: {
-                $gte: args.todo.order,
-              },
-            },
-          ],
-        },
-        update: {
-          $inc: {
-            order: -1,
+export const TODO_BULK_UPDATE_OPERATIONS: Record<
+  TODO_BULK_UPDATE_OPERATION_KEY,
+  (args: {
+    prevTodo: schema.Todo;
+    updatedTodo: schema.Todo;
+  }) => mongodb.AnyBulkWriteOperation<schema.Todo>
+> = {
+  [TODO_BULK_UPDATE_OPERATION_KEY.DECREASE_PREV_DAY_HIGHER_TODOS_ORDER]: (
+    args,
+  ) => ({
+    updateMany: {
+      filter: {
+        $and: [
+          {
+            _id: { $ne: args.prevTodo._id },
           },
+          {
+            date: utils.sameDayFilter(args.prevTodo.date),
+          },
+          {
+            order: {
+              $gte: args.prevTodo.order,
+            },
+          },
+        ],
+      },
+      update: {
+        $inc: {
+          order: -1,
         },
       },
     },
-    /**
-     *
-     * Increase the order of the higher items that are within the updated day
-     *
-     */
-    {
-      updateMany: {
-        filter: {
-          $and: [
-            {
-              _id: { $ne: args.todo._id },
-            },
-            {
-              date: utils.sameDayFilter(args.options.newTodoDate),
-            },
-            {
-              order: {
-                $gte: args.options.newTodoOrder,
-              },
-            },
-          ],
-        },
-        update: {
-          $inc: {
-            order: 1,
+  }),
+
+  [TODO_BULK_UPDATE_OPERATION_KEY.INCREASE_UPDATED_DAY_HIGHER_TODOS_ORDER]: (
+    args,
+  ) => ({
+    updateMany: {
+      filter: {
+        $and: [
+          {
+            _id: { $ne: args.updatedTodo._id },
           },
+          {
+            date: utils.sameDayFilter(args.updatedTodo.date),
+          },
+          {
+            order: {
+              $gte: args.updatedTodo.order,
+            },
+          },
+        ],
+      },
+      update: {
+        $inc: {
+          order: 1,
         },
       },
     },
-  ],
-  [TODO_MOVE_TYPE.SAME_DAY]: (args: {
-    todo: schema.Todo;
-    options: {
-      newTodoOrder: schema.Todo['order'];
-      newTodoDate: schema.Todo['date'];
-    };
-  }) => [
-    /**
-     *
-     * Item was moved within the same day
-     * Update the same day items orders
-     *
-     */
-    {
-      updateMany: {
-        filter: {
-          $and: [
-            {
-              _id: { $ne: args.todo._id },
-            },
-            {
-              date: utils.sameDayFilter(args.todo.date),
-            },
-            {
-              order: {
-                ...(args.todo.order < args.options.newTodoOrder
-                  ? {
-                      $gt: args.todo.order,
-                      $lte: args.options.newTodoOrder,
-                    }
-                  : {
-                      $lt: args.todo.order,
-                      $gte: args.options.newTodoOrder,
-                    }),
-              },
-            },
-          ],
-        },
-        update: {
-          $inc: {
-            order: args.todo.order < args.options.newTodoOrder ? -1 : 1,
+  }),
+
+  [TODO_BULK_UPDATE_OPERATION_KEY.UPDATE_PREV_DAY_NEARBY_TODOS_ORDER]: (
+    args,
+  ) => ({
+    updateMany: {
+      filter: {
+        $and: [
+          {
+            _id: { $ne: args.prevTodo._id },
           },
+          {
+            date: utils.sameDayFilter(args.prevTodo.date),
+          },
+          {
+            order: {
+              ...(args.prevTodo.order < args.updatedTodo.order
+                ? {
+                    $gt: args.prevTodo.order,
+                    $lte: args.updatedTodo.order,
+                  }
+                : {
+                    $lt: args.prevTodo.order,
+                    $gte: args.updatedTodo.order,
+                  }),
+            },
+          },
+        ],
+      },
+      update: {
+        $inc: {
+          order: args.prevTodo.order < args.updatedTodo.order ? -1 : 1,
         },
       },
     },
-  ],
+  }),
 };

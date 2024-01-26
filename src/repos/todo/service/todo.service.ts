@@ -7,8 +7,6 @@ import * as schema from '../schema';
 import * as utils from '../../../utils';
 import * as dateConstants from '../../../constants/date.constants';
 import * as constants from './todo.service.constants';
-import * as helpers from './todo.service.helpers';
-import { reflectOrderChange } from './todo.service.helpers';
 
 @nestCommon.Injectable()
 export class TodoService implements types.TodoService {
@@ -76,43 +74,141 @@ export class TodoService implements types.TodoService {
     return result;
   };
 
+  getSameDayTodoHighestOrder: types.TodoService['getSameDayTodoHighestOrder'] =
+    async (date) => {
+      const [result] = await this.todoModel
+        .aggregate<{
+          maxOrder: number;
+        }>([
+          {
+            $match: {
+              date: utils.sameDayFilter(date),
+            },
+          },
+          { $group: { _id: null, maxOrder: { $max: '$order' } } },
+        ])
+        .exec();
+
+      if (!result) {
+        return 0;
+      }
+
+      return result.maxOrder;
+    };
+
   create: types.TodoService['create'] = async (args) => {
-    const sameDateTodoMaxOrder = await helpers.getSameDateTodoMaxOrder(
+    const sameDateTodoMaxOrder = await this.getSameDayTodoHighestOrder(
       args.date,
-      {
-        model: this.todoModel,
-      },
     );
 
-    return new this.todoModel({
+    const todo = await new this.todoModel({
       ...args,
       _id: args.id,
-      order: sameDateTodoMaxOrder + 1,
+      order:
+        utils.isNumber(args.order) && args.order <= sameDateTodoMaxOrder
+          ? args.order
+          : sameDateTodoMaxOrder + 1,
     }).save();
+
+    if (utils.isNumber(args.order)) {
+      await this.todoModel.bulkWrite([
+        constants.TODO_BULK_UPDATE_OPERATIONS[
+          constants.TODO_BULK_UPDATE_OPERATION_KEY
+            .UPDATE_PREV_DAY_NEARBY_TODOS_ORDER
+        ]({
+          prevTodo: todo,
+          updatedTodo: todo,
+        }),
+      ]);
+    }
+
+    return todo;
   };
 
   updateOne: types.TodoService['updateOne'] = async (id, args) => {
-    const todo = await this.findOne(id);
+    const prevTodo = await this.findOne(id);
 
-    await this.todoModel.findOneAndUpdate(
-      {
-        _id: id,
-      },
-      args,
-    );
+    const updatedTodo = await this.todoModel
+      .findOneAndUpdate(
+        {
+          _id: id,
+        },
+        args,
+        {
+          new: true,
+        },
+      )
+      .exec();
 
-    await helpers.reflectOrderChange(todo, {
-      args: args,
-      model: this.todoModel,
-    });
+    const wasMovedToAnotherDay =
+      utils.getDiff({
+        dateA: prevTodo.date,
+        dateB: updatedTodo.date,
+        granularity: dateConstants.DATE_UNIT.DAY,
+      }) > 0;
 
-    return this.findOne(id);
+    const wasMovedWithinTheSameDay =
+      !wasMovedToAnotherDay && prevTodo.order !== updatedTodo.order;
+
+    if (wasMovedToAnotherDay) {
+      await this.todoModel.bulkWrite([
+        constants.TODO_BULK_UPDATE_OPERATIONS[
+          constants.TODO_BULK_UPDATE_OPERATION_KEY
+            .DECREASE_PREV_DAY_HIGHER_TODOS_ORDER
+        ]({
+          prevTodo: prevTodo,
+          updatedTodo: updatedTodo,
+        }),
+
+        constants.TODO_BULK_UPDATE_OPERATIONS[
+          constants.TODO_BULK_UPDATE_OPERATION_KEY
+            .INCREASE_UPDATED_DAY_HIGHER_TODOS_ORDER
+        ]({
+          prevTodo: prevTodo,
+          updatedTodo: updatedTodo,
+        }),
+      ]);
+    }
+
+    if (wasMovedWithinTheSameDay) {
+      await this.todoModel.bulkWrite([
+        constants.TODO_BULK_UPDATE_OPERATIONS[
+          constants.TODO_BULK_UPDATE_OPERATION_KEY
+            .UPDATE_PREV_DAY_NEARBY_TODOS_ORDER
+        ]({
+          prevTodo: prevTodo,
+          updatedTodo: updatedTodo,
+        }),
+      ]);
+    }
+
+    return updatedTodo;
   };
 
   deleteOne: types.TodoService['deleteOne'] = async (id) => {
-    await this.todoModel.deleteOne({
-      _id: id,
-    });
+    const todo = await this.findOne(id);
+
+    await Promise.all([
+      /**
+       * Update the same day higher todos orders
+       */
+      this.todoModel.bulkWrite([
+        constants.TODO_BULK_UPDATE_OPERATIONS[
+          constants.TODO_BULK_UPDATE_OPERATION_KEY
+            .DECREASE_PREV_DAY_HIGHER_TODOS_ORDER
+        ]({
+          prevTodo: todo,
+          updatedTodo: todo,
+        }),
+      ]),
+
+      /**
+       * Delete the entry
+       */
+      this.todoModel.deleteOne({
+        _id: id,
+      }),
+    ]);
   };
 
   deleteMany: types.TodoService['deleteMany'] = async (args) => {
