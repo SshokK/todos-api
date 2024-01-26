@@ -1,5 +1,3 @@
-import type * as types from './todo.controller.types';
-
 import * as service from '../service';
 import * as nestCommon from '@nestjs/common';
 import * as nestSwagger from '@nestjs/swagger';
