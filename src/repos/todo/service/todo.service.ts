@@ -7,6 +7,7 @@ import * as schema from '../schema';
 import * as utils from '../../../utils';
 import * as dateConstants from '../../../constants/date.constants';
 import * as constants from './todo.service.constants';
+import * as sortConstants from '../../../constants/sort.constants';
 
 @nestCommon.Injectable()
 export class TodoService implements types.TodoService {
@@ -17,15 +18,82 @@ export class TodoService implements types.TodoService {
 
   findAll: types.TodoService['findAll'] = (args) => {
     return this.todoModel
-      .find()
-      .sort({ createdAt: -1 })
+      .find({
+        ...(Boolean(args.id?.length) && {
+          _id: { $in: args.id },
+        }),
+
+        ...(utils.isBoolean(args.isDone) && {
+          isDone: args.isDone,
+        }),
+
+        ...(Boolean(args.dateRangeStart || args.dateRangeEnd) && {
+          date: {
+            ...(Boolean(args.dateRangeStart) && {
+              $gte: utils.getStartOfDate(
+                args.dateRangeStart,
+                dateConstants.DATE_UNIT.DAY,
+                {
+                  emptyFallback: null,
+                },
+              ),
+            }),
+
+            ...(Boolean(args.dateRangeEnd) && {
+              $lte: utils.getEndOfDate(
+                args.dateRangeEnd,
+                dateConstants.DATE_UNIT.DAY,
+                {
+                  emptyFallback: null,
+                },
+              ),
+            }),
+          },
+        }),
+      })
+      .sort({
+        [args.sortField]:
+          args.sortOrder === sortConstants.SORT_ORDER.ASC ? 1 : -1,
+      })
       .skip(args.offset)
       .limit(args.limit)
       .exec();
   };
 
-  getTotalCount: types.TodoService['getTotalCount'] = () => {
-    return this.todoModel.countDocuments();
+  getTotalCount: types.TodoService['getTotalCount'] = (args) => {
+    return this.todoModel.countDocuments({
+      ...(Boolean(args.id?.length) && {
+        _id: { $in: args.id },
+      }),
+
+      ...(utils.isBoolean(args.isDone) && {
+        isDone: args.isDone,
+      }),
+
+      ...(Boolean(args.dateRangeStart || args.dateRangeEnd) && {
+        date: {
+          ...(Boolean(args.dateRangeStart) && {
+            $gte: utils.getStartOfDate(
+              args.dateRangeStart,
+              dateConstants.DATE_UNIT.DAY,
+              {
+                emptyFallback: null,
+              },
+            ),
+          }),
+
+          ...(Boolean(args.dateRangeEnd) && {
+            $lte: utils.getEndOfDate(
+              args.dateRangeEnd,
+              dateConstants.DATE_UNIT.DAY,
+              {
+                emptyFallback: null,
+              },
+            ),
+          }),
+        },
+      }),
+    });
   };
 
   findOne: types.TodoService['findOne'] = async (id) => {

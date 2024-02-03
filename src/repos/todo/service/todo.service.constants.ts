@@ -9,7 +9,6 @@ export enum TODO_COUNT_AGGREGATION_KEY {
   DONE = 'Done',
   UNDONE = 'Undone',
   OVERDUE = 'Overdue',
-  TOTAL = 'Total',
 }
 
 export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
@@ -47,14 +46,7 @@ export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
       },
     },
     { $count: TODO_COUNT_AGGREGATION_KEY.OVERDUE },
-  ],
-
-  [TODO_COUNT_AGGREGATION_KEY.TOTAL]: () => [
-    {
-      $match: {},
-    },
-    { $count: TODO_COUNT_AGGREGATION_KEY.TOTAL },
-  ],
+  ]
 };
 
 export enum TODO_BULK_UPDATE_OPERATION_KEY {

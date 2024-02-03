@@ -1,9 +1,24 @@
 import type * as schema from '../schema';
+import type * as sortConstants from '../../../constants/sort.constants';
 
 export interface TodoService {
-  findAll(args: { limit: number; offset: number }): Promise<schema.Todo[]>;
+  findAll(args: {
+    limit: number;
+    offset: number;
+    id?: schema.Todo['id'][];
+    isDone?: schema.Todo['isDone'];
+    sortField?: keyof schema.Todo;
+    sortOrder?: sortConstants.SORT_ORDER;
+    dateRangeStart?: schema.Todo['date'];
+    dateRangeEnd?: schema.Todo['date'];
+  }): Promise<schema.Todo[]>;
 
-  getTotalCount(): Promise<number>;
+  getTotalCount(args: {
+    id?: schema.Todo['id'][];
+    isDone?: schema.Todo['isDone'];
+    dateRangeStart?: schema.Todo['date'];
+    dateRangeEnd?: schema.Todo['date'];
+  }): Promise<number>;
 
   findOne(id: schema.Todo['_id']): Promise<schema.Todo>;
 
@@ -27,7 +42,7 @@ export interface TodoService {
   }): Promise<schema.Todo>;
 
   updateOne(
-    id: schema.Todo['_id'],
+    id: schema.Todo['id'],
     args: {
       order?: schema.Todo['order'];
       title?: schema.Todo['title'];
@@ -36,10 +51,10 @@ export interface TodoService {
     },
   ): Promise<schema.Todo>;
 
-  deleteOne(id: schema.Todo['_id']): Promise<void>;
+  deleteOne(id: schema.Todo['id']): Promise<void>;
 
   deleteMany(args: {
-    ids?: schema.Todo['_id'][];
+    ids?: schema.Todo['id'][];
     isDone?: schema.Todo['isDone'];
     date?: {
       rangeStart?: schema.Todo['date'];

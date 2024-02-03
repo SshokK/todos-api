@@ -44,6 +44,27 @@ export class TodoController {
 
   /**
    *
+   * Returns a total count of the filtered todos
+   *
+   */
+  @nestCommon.Get('/count')
+  @nestSwagger.ApiOkResponse({
+    description: 'Todos total count',
+    type: Number,
+  })
+  @nestSwagger.ApiBadRequestResponse({
+    description: 'Wrong query params were passed',
+    type: utils.BadRequestResponseDto,
+  })
+  public async [constants.ROUTE.GET_TODOS_TOTAL_COUNT](
+    @nestCommon.Query()
+    queryParams: dto.GetTodosTotalCountQueryParamsDto,
+  ) {
+    return this.todoService.getTotalCount(queryParams);
+  }
+
+  /**
+   *
    * Creates a new to do item and returns it
    *
    */
@@ -151,7 +172,7 @@ export class TodoController {
    * Gets counted todos
    *
    */
-  @nestCommon.Get('/count')
+  @nestCommon.Get('/count-aggregations')
   @nestSwagger.ApiOkResponse({
     description: 'Todos counts',
     type: dto.CountAggregationResponseDto,

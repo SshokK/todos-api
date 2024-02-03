@@ -4,7 +4,8 @@ import * as classTransformer from 'class-transformer';
 import * as utils from '../../../utils';
 import * as schema from '../schema';
 import * as validators from '../validators';
-import * as transformers from "../../../utils/transformers";
+import * as sortConstants from "../../../constants/sort.constants";
+import * as constants from "./todo.controller.constants";
 
 export class GetTodosQueryParamsDto {
   @nestSwagger.ApiProperty({
@@ -22,6 +23,28 @@ export class GetTodosQueryParamsDto {
   @classValidator.IsInt()
   @classValidator.Min(0)
   offset: number;
+
+  @nestSwagger.ApiProperty({
+    type: String,
+    required: false,
+    description: 'Sort field',
+  })
+  @classValidator.IsOptional()
+  @classValidator.IsString()
+  @classValidator.MaxLength(256)
+  @classValidator.IsIn(constants.ALLOWED_SORT_FIELDS)
+  sortField?: keyof schema.Todo;
+
+  @nestSwagger.ApiProperty({
+    required: false,
+    enum: sortConstants.SORT_ORDER,
+    example: sortConstants.SORT_ORDER.ASC,
+    default: sortConstants.SORT_ORDER.DESC,
+    description: 'Sort order',
+  })
+  @classValidator.IsOptional()
+  @classValidator.IsIn(Object.values(sortConstants.SORT_ORDER))
+  sortOrder?: sortConstants.SORT_ORDER;
 
   @nestSwagger.ApiProperty({
     type: [String],
@@ -44,6 +67,62 @@ export class GetTodosQueryParamsDto {
   @classTransformer.Transform(utils.transformSingleBoolean)
   @classValidator.IsBoolean()
   isDone?: schema.Todo['isDone'];
+
+  @nestSwagger.ApiProperty({
+    type: () => Date,
+    description: 'Date range start',
+  })
+  @classValidator.IsOptional()
+  @classTransformer.Transform(utils.transformIso8601Date)
+  dateRangeStart?: schema.Todo['date'];
+
+  @nestSwagger.ApiProperty({
+    type: () => Date,
+    description: 'Date range end',
+  })
+  @classValidator.IsOptional()
+  @classTransformer.Transform(utils.transformIso8601Date)
+  dateRangeEnd?: schema.Todo['date'];
+}
+
+export class GetTodosTotalCountQueryParamsDto {
+  @nestSwagger.ApiProperty({
+    type: [String],
+    description: 'Filters todos by ids',
+    default: [],
+    required: false,
+  })
+  @classTransformer.Transform(utils.transformStringArray)
+  @classValidator.IsOptional()
+  @classValidator.IsArray()
+  @classValidator.IsString({ each: true })
+  id?: schema.Todo['id'][];
+
+  @nestSwagger.ApiProperty({
+    type: Boolean,
+    description: 'Filters todos done status',
+    required: false,
+  })
+  @classValidator.IsOptional()
+  @classTransformer.Transform(utils.transformSingleBoolean)
+  @classValidator.IsBoolean()
+  isDone?: schema.Todo['isDone'];
+
+  @nestSwagger.ApiProperty({
+    type: () => Date,
+    description: 'Date range start',
+  })
+  @classValidator.IsOptional()
+  @classTransformer.Transform(utils.transformIso8601Date)
+  dateRangeStart?: schema.Todo['date'];
+
+  @nestSwagger.ApiProperty({
+    type: () => Date,
+    description: 'Date range end',
+  })
+  @classValidator.IsOptional()
+  @classTransformer.Transform(utils.transformIso8601Date)
+  dateRangeEnd?: schema.Todo['date'];
 }
 
 export class CreateTodoBodyDto {
@@ -210,11 +289,10 @@ export class BulkDeleteResponseDto {
 
 export class CountAggregationQueryParamsDto {
   @nestSwagger.ApiProperty({
-    type: Date,
     description: 'Pivot date',
   })
   @classValidator.IsOptional()
-  @classTransformer.Transform(transformers.transformIso8601Date)
+  @classTransformer.Transform(utils.transformIso8601Date)
   currentDate: Date;
 }
 
@@ -239,12 +317,5 @@ export class CountAggregationResponseDto {
   })
   @classValidator.IsInt()
   undoneCount: number;
-
-  @nestSwagger.ApiProperty({
-    type: Number,
-    description: 'Total todos count',
-  })
-  @classValidator.IsInt()
-  totalCount: number;
 }
 
