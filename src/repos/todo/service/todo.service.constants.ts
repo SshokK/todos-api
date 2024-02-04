@@ -13,7 +13,7 @@ export enum TODO_COUNT_AGGREGATION_KEY {
 
 export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
   TODO_COUNT_AGGREGATION_KEY,
-  (args: { currentDate: Date }) => mongoose.PipelineStage.FacetPipelineStage[]
+  (args: { date: Date }) => mongoose.PipelineStage.FacetPipelineStage[]
 > = {
   [TODO_COUNT_AGGREGATION_KEY.DONE]: () => [
     { $match: { isDone: true } },
@@ -26,7 +26,7 @@ export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
         isDone: false,
         date: {
           $gte: new Date(
-            utils.getStartOfDate(args.currentDate, dateConstants.DATE_UNIT.DAY),
+            utils.getStartOfDate(args.date, dateConstants.DATE_UNIT.DAY),
           ),
         },
       },
@@ -40,13 +40,13 @@ export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
         isDone: false,
         date: {
           $lt: new Date(
-            utils.getStartOfDate(args.currentDate, dateConstants.DATE_UNIT.DAY),
+            utils.getStartOfDate(args.date, dateConstants.DATE_UNIT.DAY),
           ),
         },
       },
     },
     { $count: TODO_COUNT_AGGREGATION_KEY.OVERDUE },
-  ]
+  ],
 };
 
 export enum TODO_BULK_UPDATE_OPERATION_KEY {

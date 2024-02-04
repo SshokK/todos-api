@@ -1,28 +1,33 @@
+import type { ListArgs, SortArgs } from '../../../types';
+
 import type * as schema from '../schema';
-import type * as sortConstants from '../../../constants/sort.constants';
+
+export type TodoFilters = {
+  id?: schema.Todo['id'][];
+  title?: schema.Todo['title'];
+  isDone?: schema.Todo['isDone'];
+  dateRangeStart?: schema.Todo['date'];
+  dateRangeEnd?: schema.Todo['date'];
+};
 
 export interface TodoService {
-  findAll(args: {
-    limit: number;
-    offset: number;
-    id?: schema.Todo['id'][];
-    isDone?: schema.Todo['isDone'];
-    sortField?: keyof schema.Todo;
-    sortOrder?: sortConstants.SORT_ORDER;
-    dateRangeStart?: schema.Todo['date'];
-    dateRangeEnd?: schema.Todo['date'];
-  }): Promise<schema.Todo[]>;
+  findAll(
+    args: ListArgs & SortArgs<keyof schema.Todo> & TodoFilters,
+  ): Promise<schema.Todo[]>;
 
-  getTotalCount(args: {
-    id?: schema.Todo['id'][];
-    isDone?: schema.Todo['isDone'];
-    dateRangeStart?: schema.Todo['date'];
-    dateRangeEnd?: schema.Todo['date'];
-  }): Promise<number>;
+  getTotalCount(args: TodoFilters): Promise<number>;
 
   findOne(id: schema.Todo['_id']): Promise<schema.Todo>;
 
-  aggregateCount(args: { currentDate: Date }): Promise<{
+  getGroupedByDaysCount(args: ListArgs & TodoFilters): Promise<
+    {
+      dateRangeStart: schema.Todo['date'];
+      dateRangeEnd: schema.Todo['date'];
+      count: number;
+    }[]
+  >;
+
+  getCountByStatus(args: { date: Date }): Promise<{
     doneCount: number;
     overdueCount: number;
     undoneCount: number;
@@ -53,14 +58,7 @@ export interface TodoService {
 
   deleteOne(id: schema.Todo['id']): Promise<void>;
 
-  deleteMany(args: {
-    ids?: schema.Todo['id'][];
-    isDone?: schema.Todo['isDone'];
-    date?: {
-      rangeStart?: schema.Todo['date'];
-      rangeEnd?: schema.Todo['date'];
-    };
-  }): Promise<{
+  deleteMany(args: TodoFilters): Promise<{
     deletedCount: number;
   }>;
 }

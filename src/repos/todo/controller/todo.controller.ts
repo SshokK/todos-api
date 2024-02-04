@@ -157,34 +157,49 @@ export class TodoController {
   public async [constants.ROUTE.BULK_DELETE_TODOS](
     @nestCommon.Query()
     queryParams: dto.BulkDeleteQueryParamsDto,
-
-    @nestCommon.Body()
-    body: dto.BulkDeleteBodyDto,
   ) {
-    return this.todoService.deleteMany({
-      ...queryParams,
-      ...body,
-    });
+    return this.todoService.deleteMany(queryParams);
   }
 
   /**
    *
-   * Gets counted todos
+   * Gets counted todos by their status
    *
    */
-  @nestCommon.Get('/count-aggregations')
+  @nestCommon.Get('/count-by-status')
   @nestSwagger.ApiOkResponse({
-    description: 'Todos counts',
-    type: dto.CountAggregationResponseDto,
+    description: 'Todos counts by statuses',
+    type: dto.GetCountByStatusResponseDto,
   })
   @nestSwagger.ApiBadRequestResponse({
     description: 'Wrong query params were passed',
     type: utils.BadRequestResponseDto,
   })
-  public async [constants.ROUTE.AGGREGATE_COUNT](
+  public async [constants.ROUTE.GET_COUNT_BY_STATUS](
     @nestCommon.Query()
-    queryParams: dto.CountAggregationQueryParamsDto,
+    queryParams: dto.GetCountByStatusQueryParamsDto,
   ) {
-    return this.todoService.aggregateCount(queryParams);
+    return this.todoService.getCountByStatus(queryParams);
+  }
+
+  /**
+   *
+   * Gets grouped counts by dates
+   *
+   */
+  @nestCommon.Get('/count-by-days')
+  @nestSwagger.ApiOkResponse({
+    description: 'Todos counts by days',
+    type: [dto.GetCountByDaysResponseDto],
+  })
+  @nestSwagger.ApiBadRequestResponse({
+    description: 'Wrong query params were passed',
+    type: utils.BadRequestResponseDto,
+  })
+  public async [constants.ROUTE.GET_GROUPED_BY_DAYS_COUNT](
+    @nestCommon.Query()
+    queryParams: dto.GetCountByDaysQueryParamsDto,
+  ) {
+    return this.todoService.getGroupedByDaysCount(queryParams);
   }
 }

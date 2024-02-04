@@ -11,7 +11,8 @@ export enum ROUTE {
   UPDATE_TODO = 'updateTodo',
   DELETE_TODO = 'deleteTodo',
   BULK_DELETE_TODOS = 'bulkDeleteTodos',
-  AGGREGATE_COUNT = 'aggregateCount',
+  GET_COUNT_BY_STATUS = 'getCountByStatus',
+  GET_GROUPED_BY_DAYS_COUNT = 'getGroupedByDaysCount',
 }
 
 export const ALLOWED_SORT_FIELDS: (keyof schema.Todo)[] = [

@@ -7,7 +7,7 @@ import * as schema from '../schema';
 import * as utils from '../../../utils';
 import * as dateConstants from '../../../constants/date.constants';
 import * as constants from './todo.service.constants';
-import * as sortConstants from '../../../constants/sort.constants';
+import * as helpers from './todo.service.helpers';
 
 @nestCommon.Injectable()
 export class TodoService implements types.TodoService {
@@ -18,82 +18,15 @@ export class TodoService implements types.TodoService {
 
   findAll: types.TodoService['findAll'] = (args) => {
     return this.todoModel
-      .find({
-        ...(Boolean(args.id?.length) && {
-          _id: { $in: args.id },
-        }),
-
-        ...(utils.isBoolean(args.isDone) && {
-          isDone: args.isDone,
-        }),
-
-        ...(Boolean(args.dateRangeStart || args.dateRangeEnd) && {
-          date: {
-            ...(Boolean(args.dateRangeStart) && {
-              $gte: utils.getStartOfDate(
-                args.dateRangeStart,
-                dateConstants.DATE_UNIT.DAY,
-                {
-                  emptyFallback: null,
-                },
-              ),
-            }),
-
-            ...(Boolean(args.dateRangeEnd) && {
-              $lte: utils.getEndOfDate(
-                args.dateRangeEnd,
-                dateConstants.DATE_UNIT.DAY,
-                {
-                  emptyFallback: null,
-                },
-              ),
-            }),
-          },
-        }),
-      })
-      .sort({
-        [args.sortField]:
-          args.sortOrder === sortConstants.SORT_ORDER.ASC ? 1 : -1,
-      })
+      .find(helpers.applyTodoFilters(args))
+      .sort(helpers.applySort(args))
       .skip(args.offset)
       .limit(args.limit)
       .exec();
   };
 
   getTotalCount: types.TodoService['getTotalCount'] = (args) => {
-    return this.todoModel.countDocuments({
-      ...(Boolean(args.id?.length) && {
-        _id: { $in: args.id },
-      }),
-
-      ...(utils.isBoolean(args.isDone) && {
-        isDone: args.isDone,
-      }),
-
-      ...(Boolean(args.dateRangeStart || args.dateRangeEnd) && {
-        date: {
-          ...(Boolean(args.dateRangeStart) && {
-            $gte: utils.getStartOfDate(
-              args.dateRangeStart,
-              dateConstants.DATE_UNIT.DAY,
-              {
-                emptyFallback: null,
-              },
-            ),
-          }),
-
-          ...(Boolean(args.dateRangeEnd) && {
-            $lte: utils.getEndOfDate(
-              args.dateRangeEnd,
-              dateConstants.DATE_UNIT.DAY,
-              {
-                emptyFallback: null,
-              },
-            ),
-          }),
-        },
-      }),
-    });
+    return this.todoModel.countDocuments(helpers.applyTodoFilters(args));
   };
 
   findOne: types.TodoService['findOne'] = async (id) => {
@@ -106,18 +39,57 @@ export class TodoService implements types.TodoService {
     return todo;
   };
 
-  aggregateCount: types.TodoService['aggregateCount'] = async ({
-    currentDate,
+  getGroupedByDaysCount: types.TodoService['getGroupedByDaysCount'] = async (
+    args,
+  ) => {
+    const result = await this.todoModel.aggregate([
+      {
+        $match: helpers.applyTodoFilters(args),
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+          count: { $sum: 1 },
+          dateRangeStart: { $min: '$date' },
+          dateRangeEnd: { $max: '$date' },
+        },
+      },
+      {
+        $skip: args.offset,
+      },
+      {
+        $limit: args.limit,
+      },
+      {
+        $sort: {
+          _id: 1,
+        },
+      },
+      {
+        $project: {
+          dateRangeStart: '$dateRangeStart',
+          dateRangeEnd: '$dateRangeEnd',
+          count: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+    return result;
+  };
+
+  getCountByStatus: types.TodoService['getCountByStatus'] = async ({
+    date,
   }) => {
     const [result] = await this.todoModel.aggregate<
-      Awaited<ReturnType<types.TodoService['aggregateCount']>>
+      Awaited<ReturnType<types.TodoService['getCountByStatus']>>
     >([
       {
         $facet: Object.fromEntries(
           Object.entries(constants.TODO_COUNT_AGGREGATION_PIPELINES).map(
             ([aggregationKey, pipeline]) => [
               aggregationKey,
-              pipeline({ currentDate }),
+              pipeline({ date }),
             ],
           ),
         ),
@@ -281,39 +253,7 @@ export class TodoService implements types.TodoService {
 
   deleteMany: types.TodoService['deleteMany'] = async (args) => {
     const { deletedCount } = await this.todoModel
-      .deleteMany({
-        ...(Boolean(args.ids?.length) && {
-          _id: { $in: args.ids },
-        }),
-
-        ...(utils.isBoolean(args.isDone) && {
-          isDone: args.isDone,
-        }),
-
-        ...(Boolean(args.date?.rangeStart || args.date?.rangeEnd) && {
-          date: {
-            ...(Boolean(args.date.rangeStart) && {
-              $gte: utils.getStartOfDate(
-                args.date.rangeStart,
-                dateConstants.DATE_UNIT.DAY,
-                {
-                  emptyFallback: null,
-                },
-              ),
-            }),
-
-            ...(Boolean(args.date.rangeEnd) && {
-              $lt: utils.getEndOfDate(
-                args.date.rangeEnd,
-                dateConstants.DATE_UNIT.DAY,
-                {
-                  emptyFallback: null,
-                },
-              ),
-            }),
-          },
-        }),
-      })
+      .deleteMany(helpers.applyTodoFilters(args))
       .exec();
 
     return {
