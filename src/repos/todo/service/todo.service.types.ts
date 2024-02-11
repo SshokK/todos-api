@@ -27,11 +27,12 @@ export interface TodoService {
     }[]
   >;
 
-  getCountByStatus(args: { date: Date }): Promise<{
+  getCountByStatus(args: TodoFilters & {
+    dueDate: Date
+  }): Promise<{
     doneCount: number;
     overdueCount: number;
     undoneCount: number;
-    totalCount: number;
   }>;
 
   getSameDayTodoHighestOrder(

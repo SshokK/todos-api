@@ -78,18 +78,19 @@ export class TodoService implements types.TodoService {
     return result;
   };
 
-  getCountByStatus: types.TodoService['getCountByStatus'] = async ({
-    date,
-  }) => {
+  getCountByStatus: types.TodoService['getCountByStatus'] = async (args) => {
     const [result] = await this.todoModel.aggregate<
       Awaited<ReturnType<types.TodoService['getCountByStatus']>>
     >([
+      {
+        $match: helpers.applyTodoFilters(args),
+      },
       {
         $facet: Object.fromEntries(
           Object.entries(constants.TODO_COUNT_AGGREGATION_PIPELINES).map(
             ([aggregationKey, pipeline]) => [
               aggregationKey,
-              pipeline({ date }),
+              pipeline({ dueDate: args.dueDate }),
             ],
           ),
         ),

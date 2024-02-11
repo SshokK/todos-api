@@ -1,7 +1,6 @@
 import type * as mongoose from 'mongoose';
 import type * as mongodb from 'mongodb';
 
-import * as dateConstants from '../../../constants/date.constants';
 import * as utils from '../../../utils';
 import * as schema from '../schema';
 
@@ -13,7 +12,7 @@ export enum TODO_COUNT_AGGREGATION_KEY {
 
 export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
   TODO_COUNT_AGGREGATION_KEY,
-  (args: { date: Date }) => mongoose.PipelineStage.FacetPipelineStage[]
+  (args: { dueDate: Date }) => mongoose.PipelineStage.FacetPipelineStage[]
 > = {
   [TODO_COUNT_AGGREGATION_KEY.DONE]: () => [
     { $match: { isDone: true } },
@@ -25,9 +24,7 @@ export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
       $match: {
         isDone: false,
         date: {
-          $gte: new Date(
-            utils.getStartOfDate(args.date, dateConstants.DATE_UNIT.DAY),
-          ),
+          $gte: args.dueDate,
         },
       },
     },
@@ -39,9 +36,7 @@ export const TODO_COUNT_AGGREGATION_PIPELINES: Record<
       $match: {
         isDone: false,
         date: {
-          $lt: new Date(
-            utils.getStartOfDate(args.date, dateConstants.DATE_UNIT.DAY),
-          ),
+          $lt: args.dueDate,
         },
       },
     },

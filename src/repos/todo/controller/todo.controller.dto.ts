@@ -231,13 +231,15 @@ export class BulkDeleteResponseDto {
   deletedCount: number;
 }
 
-export class GetCountByStatusQueryParamsDto {
+export class GetCountByStatusQueryParamsDto extends TodosQueryParamFiltersDto {
   @nestSwagger.ApiProperty({
-    description: 'Pivot date',
+    type: () => Date,
+    description:
+      'Date that determines if the tasks are overdue or not. Acts as "less than"',
   })
-  @classValidator.IsOptional()
   @classTransformer.Transform(utils.transformIso8601Date)
-  date: Date;
+  @classValidator.IsDate()
+  dueDate: Date;
 }
 
 export class GetCountByStatusResponseDto {
