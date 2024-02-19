@@ -1,5 +1,6 @@
 export * from './boolean';
 export * from './date';
+export * from './decorators';
 export * from './dto';
 export * from './number';
 export * from './string';

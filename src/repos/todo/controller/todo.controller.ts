@@ -187,19 +187,29 @@ export class TodoController {
    * Gets grouped counts by dates
    *
    */
-  @nestCommon.Get('/count-by-days')
+  @nestCommon.Get('/count-by-dates')
+  @nestSwagger.ApiHeader({
+    name: 'X-Timezone-Offset',
+    description: 'Allows to use custom timezones in calculations'
+  })
   @nestSwagger.ApiOkResponse({
-    description: 'Todos counts by days',
-    type: [dto.GetCountByDaysResponseDto],
+    description: 'Todos counts by dates',
+    type: [dto.GetCountByDatesResponseDto],
   })
   @nestSwagger.ApiBadRequestResponse({
     description: 'Wrong query params were passed',
     type: utils.BadRequestResponseDto,
   })
-  public async [constants.ROUTE.GET_GROUPED_BY_DAYS_COUNT](
+  public async [constants.ROUTE.GET_COUNT_BY_DATE](
+    @utils.RequestHeaders(dto.GetCountByDatesHeadersDto)
+    headers: dto.GetCountByDatesHeadersDto,
+
     @nestCommon.Query()
-    queryParams: dto.GetCountByDaysQueryParamsDto,
+    queryParams: dto.GetCountByDatesQueryParamsDto,
   ) {
-    return this.todoService.getGroupedByDaysCount(queryParams);
+    return this.todoService.getGroupedByDatesCount({
+      ...headers,
+      ...queryParams,
+    });
   }
 }

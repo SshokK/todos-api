@@ -265,7 +265,17 @@ export class GetCountByStatusResponseDto {
   undoneCount: number;
 }
 
-export class GetCountByDaysQueryParamsDto extends TodosQueryParamFiltersDto {
+export class GetCountByDatesHeadersDto {
+  @classTransformer.Expose({ name: 'x-timezone-offset' })
+  @classTransformer.Transform(utils.transformTimezone)
+  @classValidator.IsTimeZone({
+    message: 'X-Timezone-Offset must be a valid offset',
+  })
+  @classValidator.IsOptional()
+  timezone: string;
+}
+
+export class GetCountByDatesQueryParamsDto extends TodosQueryParamFiltersDto {
   @nestSwagger.ApiProperty({
     minimum: 0,
     maximum: 100,
@@ -282,20 +292,14 @@ export class GetCountByDaysQueryParamsDto extends TodosQueryParamFiltersDto {
   @classValidator.Min(0)
   offset: number;
 }
-export class GetCountByDaysResponseDto {
-  @nestSwagger.ApiProperty({
-    type: String,
-    description: 'Counted todos entry date range start',
-  })
-  @classValidator.IsString()
-  dateRangeStart: string;
 
+export class GetCountByDatesResponseDto {
   @nestSwagger.ApiProperty({
     type: String,
-    description: 'Counted todos entry date range end',
+    description: 'Todo date',
   })
   @classValidator.IsString()
-  dateRangeEnd: string;
+  date: string;
 
   @nestSwagger.ApiProperty({
     type: Number,

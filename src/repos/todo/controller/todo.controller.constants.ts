@@ -12,7 +12,7 @@ export enum ROUTE {
   DELETE_TODO = 'deleteTodo',
   BULK_DELETE_TODOS = 'bulkDeleteTodos',
   GET_COUNT_BY_STATUS = 'getCountByStatus',
-  GET_GROUPED_BY_DAYS_COUNT = 'getGroupedByDaysCount',
+  GET_COUNT_BY_DATE = 'getCountByDate',
 }
 
 export const ALLOWED_SORT_FIELDS: (keyof schema.Todo)[] = [

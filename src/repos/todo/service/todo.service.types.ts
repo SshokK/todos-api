@@ -1,6 +1,7 @@
 import type { ListArgs, SortArgs } from '../../../types';
 
 import type * as schema from '../schema';
+import { DateArgs } from '../../../types';
 
 export type TodoFilters = {
   id?: schema.Todo['id'][];
@@ -19,7 +20,9 @@ export interface TodoService {
 
   findOne(id: schema.Todo['_id']): Promise<schema.Todo>;
 
-  getGroupedByDaysCount(args: ListArgs & TodoFilters): Promise<
+  getGroupedByDatesCount(
+    args: ListArgs & Partial<DateArgs> & TodoFilters,
+  ): Promise<
     {
       dateRangeStart: schema.Todo['date'];
       dateRangeEnd: schema.Todo['date'];
@@ -27,9 +30,11 @@ export interface TodoService {
     }[]
   >;
 
-  getCountByStatus(args: TodoFilters & {
-    dueDate: Date
-  }): Promise<{
+  getCountByStatus(
+    args: TodoFilters & {
+      dueDate: Date;
+    },
+  ): Promise<{
     doneCount: number;
     overdueCount: number;
     undoneCount: number;

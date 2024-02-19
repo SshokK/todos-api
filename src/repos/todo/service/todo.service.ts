@@ -39,19 +39,56 @@ export class TodoService implements types.TodoService {
     return todo;
   };
 
-  getGroupedByDaysCount: types.TodoService['getGroupedByDaysCount'] = async (
+  getGroupedByDatesCount: types.TodoService['getGroupedByDatesCount'] = async (
     args,
   ) => {
-    const result = await this.todoModel.aggregate([
+    const timezone = args.timezone ?? dateConstants.TIMEZONE.UTC;
+
+    return this.todoModel.aggregate([
       {
         $match: helpers.applyTodoFilters(args),
       },
       {
         $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+          _id: {
+            year: { $year: { date: '$date', timezone } },
+            month: { $month: { date: '$date', timezone } },
+            day: {
+              $dayOfMonth: { date: '$date', timezone },
+            },
+          },
+
           count: { $sum: 1 },
-          dateRangeStart: { $min: '$date' },
-          dateRangeEnd: { $max: '$date' },
+        },
+      },
+      {
+        $addFields: {
+          date: {
+            $dateFromString: {
+              dateString: {
+                $concat: [
+                  {
+                    $toString: '$_id.year',
+                  },
+                  '-',
+                  {
+                    $toString: '$_id.month',
+                  },
+                  '-',
+                  {
+                    $toString: '$_id.day',
+                  },
+                ],
+              },
+              format: '%Y-%m-%d',
+              timezone: timezone,
+            },
+          },
+        },
+      },
+      {
+        $sort: {
+          date: 1,
         },
       },
       {
@@ -61,21 +98,13 @@ export class TodoService implements types.TodoService {
         $limit: args.limit,
       },
       {
-        $sort: {
-          _id: 1,
-        },
-      },
-      {
         $project: {
-          dateRangeStart: '$dateRangeStart',
-          dateRangeEnd: '$dateRangeEnd',
-          count: 1,
+          date: 1,
+          count: 2,
           _id: 0,
         },
       },
     ]);
-
-    return result;
   };
 
   getCountByStatus: types.TodoService['getCountByStatus'] = async (args) => {

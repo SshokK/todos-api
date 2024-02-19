@@ -10,6 +10,10 @@ export type ListArgs = {
   offset: number;
 };
 
+export type DateArgs = {
+  timezone: string;
+};
+
 export type SortArgs<T extends string> = {
   sortField?: T;
   sortOrder?: sortConstants.SORT_ORDER;
